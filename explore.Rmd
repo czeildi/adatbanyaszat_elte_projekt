@@ -1,0 +1,28 @@
+---
+title: "explore the news data set"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+source("src/load.R")
+source("src/transform.R")
+news <- getNewsData(file.path('data', 'OnlineNewsPopularity.csv'))
+readable_news <- get_readable_news(news)
+```
+### Ez itt egy sima szöveg.
+
+```{r summary}
+summary(readable_news)
+```
+
+
+```{r head}
+head(readable_news)
+tail(readable_news)
+str(readable_news)
+```
+
+```{r , echo = FALSE}
+ggplot(readable_news, aes(x = factor(weekday))) + geom_bar(fill = "darkblue")
+```
+

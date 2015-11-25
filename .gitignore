@@ -12,3 +12,4 @@ vignettes/*.pdf
 data
 packrat/lib*/
 .DS_Store
+explore.html
