@@ -16,6 +16,7 @@ summary(news)
 
 ```{r head, echo=FALSE}
 head(news)
+print("yay")
 ```
 
 ```{r tail, echo=FALSE}
