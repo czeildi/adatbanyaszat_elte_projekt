@@ -3,7 +3,10 @@ library(rmarkdown)
 library(ggplot2)
 
 getNewsData <- function(filename) {
-    fread(filename)
+    data <- fread(filename)
+    data$id <- seq(1, nrow(data))
+    data$url <- NULL
+    data
 }
 
 news <- getNewsData(file.path('data', 'OnlineNewsPopularity.csv'))
