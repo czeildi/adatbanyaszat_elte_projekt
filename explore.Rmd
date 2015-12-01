@@ -5,24 +5,42 @@ output: html_document
 
 ```{r setup, include=FALSE}
 source("src/load.R")
-source("src/transform.R")
-news <- getNewsData(file.path('data', 'OnlineNewsPopularity.csv'))
-readable_news <- get_readable_news(news)
 ```
-### Ez itt egy sima szöveg.
+
+
+```{r str}
+str(news)
+```
+
+```{r weekday distribution , echo = FALSE}
+weekday_data <- melt(news[,c(weekday_columns), with = F], measure.vars = weekday_columns)
+weekday_data <- weekday_data[,"value":= sum(value), by = variable]
+weekday_data <- unique(weekday_data)
+weekday_data[,"variable":=gsub("weekday_is_", "", variable)]
+weekday_data[,"variable":=factor(variable, levels = c("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"))]
+ggplot(weekday_data, aes(x = variable, y = value)) + 
+    geom_bar(fill = "darkblue", stat = "identity")
+```
+
+```{r data channel distribution, echo = FALSE}
+data_channel_data <- melt(news[,c(data_channel_columns), with = F], measure.vars = data_channel_columns)
+data_channel_data <- data_channel_data[,"value":= sum(value), by = variable]
+data_channel_data <- unique(data_channel_data)
+data_channel_data[,"variable":=gsub("data_channel_is_", "", variable)]
+ggplot(data_channel_data, aes(x = variable, y = value)) + 
+    geom_bar(fill = "darkblue", stat = "identity")
+```
+
+#Articles per week back in time
+```{r timedelta, echo = FALSE}
+ggplot(news, aes(x = timedelta)) + geom_histogram(binwidth = 7)
+```
+
+#Articles per month back in time
+```{r timedelta per month, echo = FALSE}
+ggplot(news, aes(x = timedelta)) + geom_histogram(binwidth = 30)
+```
 
 ```{r summary}
-summary(readable_news)
+summary(news)
 ```
-
-
-```{r head}
-head(readable_news)
-tail(readable_news)
-str(readable_news)
-```
-
-```{r , echo = FALSE}
-ggplot(readable_news, aes(x = factor(weekday))) + geom_bar(fill = "darkblue")
-```
-
