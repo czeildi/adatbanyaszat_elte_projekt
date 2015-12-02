@@ -32,15 +32,21 @@ ggplot(data_channel_data, aes(x = variable, y = value)) +
 ```
 
 #Articles per week back in time
-```{r timedelta, echo = FALSE}
+```{r timedelta}
 ggplot(news, aes(x = timedelta)) + geom_histogram(binwidth = 7)
 ```
 
 #Articles per month back in time
-```{r timedelta per month, echo = FALSE}
+```{r timedelta per month}
 ggplot(news, aes(x = timedelta)) + geom_histogram(binwidth = 30)
 ```
 
 ```{r summary}
 summary(news)
 ```
+
+```{r shares}
+ggplot(news, aes(x = log(shares))) + geom_density()
+```
+
+<!-- TODO: mean, median of shares by channel, weekday --> 

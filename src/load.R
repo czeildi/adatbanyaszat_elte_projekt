@@ -11,8 +11,8 @@ getNewsData <- function(filename) {
 
 news <- getNewsData(file.path('data', 'OnlineNewsPopularity.csv'))
 
-weekday_columns <- names(news)[32:38]
-data_channel_columns <- names(news)[14:19]
-kw_columns <- names(news)[20:28]
-lda_columns <- names(news)[40:44]
+weekday_columns <- names(news)[31:37]
+data_channel_columns <- names(news)[13:18]
+kw_columns <- names(news)[19:27]
+lda_columns <- names(news)[39:43]
 
