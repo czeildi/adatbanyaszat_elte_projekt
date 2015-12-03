@@ -10,3 +10,4 @@ for (name in columns$V1) {
 }
 
 #dimension reduction
+pc <- prcomp(x=news,center=FALSE,scale=TRUE)
