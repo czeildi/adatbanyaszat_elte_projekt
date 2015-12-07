@@ -1,5 +1,11 @@
 source('src/load.R')
 
+library(caret)
+library(class)
+library(rpart)
+library(e1071)
+library(neuralnet)
+
 #linear model
 lm <- lm(shares ~ kw_avg_avg, data = news)
 news$lin_pred1 <- lm$fitted.values

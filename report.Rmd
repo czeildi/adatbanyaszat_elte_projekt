@@ -1,0 +1,15 @@
+---
+title: "Report of predicting number of shares in Online News Popularity Data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Report of predicting number of shares in Online News Popularity Data
+
+## Background
+- This [github](https://github.com/czeildi/adatbanyaszat_elte_projekt) repository contains all code for our work regarding this project. It helped us collaborating as well as keep track of changes and make our work easy to look at. We worked in **R** using **RStudio**.
+- This project is about trying basic data mining methods on the [Online News Popularity dataset](http://archive.ics.uci.edu/ml/datasets/Online+News+Popularity) while trying to predict the number of shares of an article. This is a publicly available dataset at  [UCI Machine Learning Repository](http://archive.ics.uci.edu/ml/index.html).
+- authors: Lilla Kohut (kohutlilla@gmail.com) and Ildi Czeller (czeildi@gmail.com)

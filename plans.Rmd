@@ -1,0 +1,38 @@
+---
+title: "Tervek"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Adat:
+[Online News Popularity](http://archive.ics.uci.edu/ml/datasets/Online+News+Popularity), [mashable.com](mashable.com) hírek adatai. 
+
+**Adat alap statisztikái**: **39797** adat pont, **61** változó, amiből **1** a célváltozó, **2** azonosító, és a maradék **58** prediktív, nincs hiányzó adat. Az adat létrehozásának ideje **January 8, 2015**. Bizonyos változók már adatbányászati algoritmusok felhasználásával jöttek létre.
+
+- Kategorikus változók száma: 7 + 1 +  6 = **14** 
+- Numerikus változók száma: **44**
+
+### Feladat
+Online hír népszerűség megjósolása, pontosabban a megosztások számának jóslása. Ha binárisként tekintünk a célváltozóra, klasszifikálási feladatot kapunk, ehhez más modelleket használhatunk, mint a ,,folytonos” célváltozó prediktálásához. Úgy tehetjük binárissá a célváltozót, hogy meghatározunk egy küszöböt, és az annál több megosztással rendelkező cikkeket tekintjük népszerűnek.
+
+###Projekt terv röviden:
+- teszt/training adat leválasztása
+- adat felfedezés: minőség, eloszlás, függések
+- számolásigényes modellekhez rész adat kiválasztása
+- oszlopelhagyás: legrelevánsabb oszlopok kivásztása
+- kül. modellek futtatása, eldönteni, hogy jelen esetben melyik alkalmazható
+- random forest
+- regression
+- decision tree
+- naive bayes
+- support vector machine
+- k-nearest neighbours
+- klaszterezés: érdemes-e csinálni?
+- legjobb modell kiválasztása
+- modell paraméterezése
+- visszamérés
+- eredmények összefoglalása és vizualizálása : report és prezentáció formájában
+

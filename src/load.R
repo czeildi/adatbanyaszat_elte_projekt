@@ -1,16 +1,15 @@
 library(data.table)
 library(rmarkdown)
 library(ggplot2)
-library(caret)
-library(class)
-library(rpart)
-library(e1071)
-library(neuralnet)
 
 getNewsData <- function(filename) {
     data <- fread(filename)
     data$id <- seq(1, nrow(data))
     data$url <- NULL
+    setnames(data, names(data)[13:18],
+             sapply(names(data)[13:18], function(x) {substr(x, 17,100)}))
+    setnames(data, names(data)[31:37],
+             sapply(names(data)[31:37], function(x) {substr(x, 12,100)}))
     data
 }
 
@@ -27,6 +26,7 @@ train_news <- function(news, seed = 123456) {
     bound <- floor((nrow(news)/5)*3)
     news_for_sampling <- news[sample(nrow(news)), ] 
     train <- news_for_sampling[1:bound,]
+    train <- train["shares":= log(shares)]
     train
 }
 
@@ -40,6 +40,7 @@ test_news <- function(news, seed = 123456) {
     bound <- floor((nrow(news)/5)*3)
     news_for_sampling <- news[sample(nrow(news)), ] 
     test <- news_for_sampling[(bound+1):nrow(news), ]  
+    test <- test["shares":= log(shares)]
     test
 }
 

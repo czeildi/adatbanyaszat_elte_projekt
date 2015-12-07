@@ -1,5 +1,5 @@
 ---
-title: "explore the news data set"
+title: "Explore the Online News Popularity Dataset"
 output: html_document
 ---
 
@@ -7,26 +7,36 @@ output: html_document
 source("src/load.R")
 ```
 
+# Ide kéne általános előzetes leírás az adathalmazról, kb ami a honlapon is fent van, meg amit projekt indító doksiba is beleírtunk.
 
 ```{r str}
 str(news)
 ```
 
+This is how the distribution of the number of shares looks like:
+
+```{r shares_distribution}
+quantile(news$shares, seq(0,1,0.1))
+quantile(news$shares, c(0, 0.001, 0.005, 0.01, 0.05, seq(0.1,0.9,0.1), 0.95, 0.99, 0.995, 0.999))
+```
+
+# Number of articles published on each day of the week: 
+
 ```{r weekday distribution , echo = FALSE}
 weekday_data <- melt(news[,c(weekday_columns), with = F], measure.vars = weekday_columns)
 weekday_data <- weekday_data[,"value":= sum(value), by = variable]
 weekday_data <- unique(weekday_data)
-weekday_data[,"variable":=gsub("weekday_is_", "", variable)]
 weekday_data[,"variable":=factor(variable, levels = c("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"))]
 ggplot(weekday_data, aes(x = variable, y = value)) + 
     geom_bar(fill = "darkblue", stat = "identity")
 ```
 
+#Number of articles published in each data channel:
+
 ```{r data channel distribution, echo = FALSE}
 data_channel_data <- melt(news[,c(data_channel_columns), with = F], measure.vars = data_channel_columns)
 data_channel_data <- data_channel_data[,"value":= sum(value), by = variable]
 data_channel_data <- unique(data_channel_data)
-data_channel_data[,"variable":=gsub("data_channel_is_", "", variable)]
 ggplot(data_channel_data, aes(x = variable, y = value)) + 
     geom_bar(fill = "darkblue", stat = "identity")
 ```
@@ -45,8 +55,62 @@ ggplot(news, aes(x = timedelta)) + geom_histogram(binwidth = 30)
 summary(news)
 ```
 
+More about the distribution of the shares variable
+
 ```{r shares}
+ggplot(news[shares<10000,], aes(x = shares)) + geom_density()
 ggplot(news, aes(x = log(shares))) + geom_density()
 ```
 
-<!-- TODO: mean, median of shares by channel, weekday --> 
+The following was a discovery but it does not effect the core of the predictive modeling.
+
+```{r mod}
+ggplot(news[shares < 1000,], aes(x = shares%%10)) + geom_histogram()
+ggplot(news[shares > 1000,], aes(x = shares%%10)) + geom_histogram()
+```
+
+
+#Distribution of number of shares by data channel:
+
+```{r shares_by_channel}
+channel_data <- news[,c(data_channel_columns, "shares"),with = F]
+channel_data <- channel_data[,c("lifestyle", "entertainment", "bus", "socmed", "tech", "world") :=
+                                 list(lifestyle * shares, entertainment * shares,
+                                      bus * shares, socmed * shares, tech * shares, world * shares)]
+channel_data <- melt(channel_data[,data_channel_columns, with = F],
+                     measure.vars = data_channel_columns)
+channel_data <- channel_data[value != 0]
+ggplot(channel_data, aes(x = variable, y = value)) + geom_boxplot()
+channel_data <- channel_data[,c("mean_shares", "median_shares"):=
+                                 list(mean(value), median(value)), by = variable]
+channel_data <- unique(channel_data[,.(variable, mean_shares, median_shares)])
+channel_data <- melt(channel_data,measure.vars = c("mean_shares", "median_shares"), id.vars = "variable" )
+ggplot(channel_data, aes(x = variable)) + geom_bar(aes(y = value, fill = `variable.1`), stat = "identity", position = "dodge")
+```
+
+#Distribution of number of shares by weekday:
+
+```{r shares_by_weekday}
+weekday_data <- news[,c(weekday_columns, "shares"),with = F]
+weekday_data <- weekday_data[,c("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday") :=
+                                 list(monday * shares, tuesday * shares,
+                                      wednesday * shares, thursday * shares, friday * shares, saturday * shares, sunday * shares)]
+weekday_data <- melt(weekday_data[,weekday_columns, with = F],
+                     measure.vars = weekday_columns)
+weekday_data <- weekday_data[value != 0]
+ggplot(weekday_data, aes(x = variable, y = value)) + geom_boxplot()
+weekday_data <- weekday_data[,c("mean_shares", "median_shares"):=
+                                 list(mean(value), median(value)), by = variable]
+weekday_data <- unique(weekday_data[,.(variable, mean_shares, median_shares)])
+weekday_data <- melt(weekday_data,measure.vars = c("mean_shares", "median_shares"), id.vars = "variable" )
+ggplot(weekday_data, aes(x = variable)) + geom_bar(aes(y = value, fill = `variable.1`), stat = "identity", position = "dodge")
+```
+
+#Interdependencies betweek the columns LDA_..
+
+```{r lda_distributions}
+lda <- news[,lda_columns, with = F]
+plot(lda)
+lda <- melt(lda, measure.vars = lda_columns)
+ggplot(lda, aes(x = value)) + geom_density(aes(col = variable))
+```
