@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ### Adat:
 [Online News Popularity](http://archive.ics.uci.edu/ml/datasets/Online+News+Popularity), [mashable.com](mashable.com) hírek adatai. 
 
-**Adat alap statisztikái**: **39797** adat pont, **61** változó, amiből **1** a célváltozó, **2** azonosító, és a maradék **58** prediktív, nincs hiányzó adat. Az adat létrehozásának ideje **January 8, 2015**. Bizonyos változók már adatbányászati algoritmusok felhasználásával jöttek létre.
+**Adat alap statisztikái**: **39797** adat pont, **61** változó, amiből **1** a célváltozó, **2** azonosító, és a maradék **58** prediktív, nincs hiányzó adat, se duplikátum. Az adat létrehozásának ideje **January 8, 2015**. Bizonyos változók már adatbányászati algoritmusok felhasználásával jöttek létre.
 
 - Kategorikus változók száma: 7 + 1 +  6 = **14** 
 - Numerikus változók száma: **44**

@@ -2,6 +2,9 @@ library(data.table)
 library(rmarkdown)
 library(ggplot2)
 
+
+# original dataset --------------------------------------------------------
+
 getNewsData <- function(filename) {
     data <- fread(filename)
     data$id <- seq(1, nrow(data))
@@ -20,6 +23,8 @@ data_channel_columns <- names(news)[13:18]
 kw_columns <- names(news)[19:27]
 lda_columns <- names(news)[39:43]
 
+
+# train and test with log(shares) -----------------------------------------
 
 train_news <- function(news, seed = 123456) {
     set.seed(123456)
@@ -44,12 +49,10 @@ test_news <- function(news, seed = 123456) {
     test
 }
 
-# train <- train_news(news)
-# small_train <- small_data(train)
-# test <- test_news(news)
-# small_test <- small_data(test)
 
-get_popular_data <- function(news, percent_of_not_popular = 0.9) {
+# news data with binary target variable -----------------------------------
+
+get_popular_data <- function(news, percent_of_not_popular = 0.5) {
     limit_of_popularity <- quantile(news$shares, percent_of_not_popular)
     popular <- copy(news)
     popular$is_popular <- (popular_test$shares > limit_of_popularity)
@@ -57,10 +60,3 @@ get_popular_data <- function(news, percent_of_not_popular = 0.9) {
     popular$shares <- NULL
     popular
 }
-
-# popular <- get_popular_data(news)
-# popular_train <- train_news(popular)
-# popular_test <- test_news(popular)
-# small_popular_train <- small_data(popular_train)
-# small_popular_test <- small_data(popular_test)
-# 

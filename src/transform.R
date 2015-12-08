@@ -1,16 +1,16 @@
-get_readable_news <- function(news) {
-    readable_news <- news
-    readable_news[,"weekday":= apply(readable_news[,weekday_columns,with = F],1,
-                                   function(x) weekday_columns[which(x==1)])]
-    # readable_news$num_channel <- apply(readable_news[,data_channel_columns, with = F],1,
-    #                                    function(x) sum(x))
-    readable_news$channel <- apply(readable_news[,data_channel_columns, with = F],1,
-                                   function(x) data_channel_columns[which(x==1)])
-    readable_news[,"channel" := ifelse(length(channel) == 0, "no_channel", channel[1])]
-    
-    # num_channel is 0 or 1
-    readable_news <- readable_news[,weekday_columns:=NULL, with = F]
-    readable_news <- readable_news[,data_channel_columns:=NULL, with = F]
-    # readable_news$num_channel <- NA
-    readable_news
+replace_weekday_columns <- function(news_data) {
+    news_data <- news_data[,"weekday":= apply(news_data[,weekday_columns,with = F],1,
+                                              function(x) weekday_columns[which(x==1)])]
+    news_data <- news_data[,weekday_columns:=NULL, with = F]
+    news_data
+}
+
+replace_channel_columns <- function(news_data) {
+    news_data <- news_data[,"no_channel":= apply(news_data[,data_channel_columns, with = F],1,
+                                                  function(x) {1 - sum(x)})]
+    channel_columns <- c(data_channel_columns, "no_channel")
+    news_data <- news_data[,"channel":= apply(news_data[,channel_columns,with = F],1,
+                                              function(x) channel_columns[which(x==1)])]
+    news_data <- news_data[,channel_columns:=NULL, with = F]
+    news_data
 }

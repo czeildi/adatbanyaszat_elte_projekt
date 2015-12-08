@@ -13,3 +13,8 @@ data
 packrat/lib*/
 .DS_Store
 explore.html
+plans.html
+report.html
+measure_results.html
+plans.pdf
+src/temp.R
