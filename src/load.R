@@ -8,7 +8,7 @@ source('src/transform.R')
 
 getNewsData <- function(filename) {
     data <- fread(filename)
-    data$id <- seq(1, nrow(data))
+    # data$id <- seq(1, nrow(data))
     data$url <- NULL
     setnames(data, names(data)[13:18],
              sapply(names(data)[13:18], function(x) {substr(x, 17,100)}))
@@ -32,7 +32,6 @@ train_news <- function(news, seed = 123456) {
     bound <- floor((nrow(news)/5)*3)
     news_for_sampling <- news[sample(nrow(news)), ] 
     train <- news_for_sampling[1:bound,]
-    train <- train["shares":= log(shares)]
     train
 }
 
@@ -46,7 +45,6 @@ test_news <- function(news, seed = 123456) {
     bound <- floor((nrow(news)/5)*3)
     news_for_sampling <- news[sample(nrow(news)), ] 
     test <- news_for_sampling[(bound+1):nrow(news), ]  
-    test <- test["shares":= log(shares)]
     test
 }
 
@@ -56,7 +54,7 @@ test_news <- function(news, seed = 123456) {
 get_popular_data <- function(news, percent_of_not_popular = 0.5) {
     limit_of_popularity <- quantile(news$shares, percent_of_not_popular)
     popular <- copy(news)
-    popular$is_popular <- (popular_test$shares > limit_of_popularity)
+    popular$is_popular <- (popular$shares > limit_of_popularity)
     popular$is_popular <- as.factor(popular$is_popular)
     popular$shares <- NULL
     popular

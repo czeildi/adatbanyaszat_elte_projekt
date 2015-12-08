@@ -1,0 +1,66 @@
+source('src/load.R')
+
+library(caret)
+library(class)
+library(rpart)
+library(e1071)
+
+train <- train_news(news)
+train <- train[,"shares":= log(shares)]
+small_train <- small_data(train)
+test <- test_news(news)
+test <- test[,"shares":= log(shares)]
+small_test <- small_data(test)
+
+popular_50 <- get_popular_data(news)
+popular_train_50 <- train_news(popular_50)
+popular_test_50 <- test_news(popular_50)
+small_popular_train_50 <- small_data(popular_train_50)
+small_popular_test_50 <- small_data(popular_test_50)
+
+popular_10 <- get_popular_data(news, percent_of_not_popular = 0.9)
+popular_train_10 <- train_news(popular_10)
+popular_test_10 <- test_news(popular_10)
+small_popular_train_10 <- small_data(popular_train_10)
+small_popular_test_10 <- small_data(popular_test_10)
+
+
+# log(shares) -------------------------------------------------------------
+
+lm1 <- lm(shares ~ kw_avg_avg, data = train)
+train$lin1 <- lm1$fitted.values
+train$lin1_res <- lm1$residuals
+ggplot(train, aes(x = kw_avg_avg, y = shares)) + geom_point() +
+    geom_smooth(method = "lm", formula = y ~ x)
+
+sqrt(mean(train$lin1_res * train$lin1_res))
+
+test$lin1 <- predict.lm(lm1, newdata = test)
+sqrt(mean((test$lin1 - test$shares)*(test$lin1 - test$shares)))
+
+lm2 <- lm(shares ~ ., data = train)
+train$lin2 <- lm2$fitted.values
+train$lin2_res <- lm2$residuals
+sqrt(mean(train$lin2_res * train$lin2_res))
+
+test$lin2 <- predict.lm(lm2, newdata = test)
+
+sqrt(mean((test$lin2 - test$shares)*(test$lin2 - test$shares)))
+
+train$pred_perm <- sample(train$shares)
+sqrt(mean((train$pred_perm - train$shares)*(train$pred_perm - train$shares)))
+
+train$pred_median <- median(train$shares)
+sqrt(mean((train$pred_median - train$shares)*(train$pred_median - train$shares)))
+
+# 50% popular -------------------------------------------------------------
+
+num_popular <- sum((popular_50$is_popular == TRUE))
+popular_50$random_pred <- sample(c(rep(TRUE, num_popular), rep(FALSE,nrow(popular_50) - num_popular)))
+confusionMatrix(popular_50$is_popular, popular_50$random_pred)
+
+# 90% popular -------------------------------------------------------------
+
+num_popular <- sum((popular_10$is_popular == TRUE))
+popular_10$random_pred <- sample(c(rep(TRUE, num_popular), rep(FALSE,nrow(popular_10) - num_popular)))
+confusionMatrix(popular_10$is_popular, popular_10$random_pred)
