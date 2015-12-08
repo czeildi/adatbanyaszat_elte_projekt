@@ -4,67 +4,93 @@ library(caret)
 library(class)
 library(rpart)
 library(e1071)
+library(ROCR)
 
 # knn ---------------------------------------------------------------------
 
+popular_50 <- get_popular_data(news)
+popular_train_50 <- train_news(popular_50)
+popular_test_50 <- test_news(popular_50)
+small_popular_train_50 <- small_data(popular_train_50)
+small_popular_test_50 <- small_data(popular_test_50)
 
-
-# preProcValues <- preProcess(x = popular_train_wo_target,method = c("center", "scale"))
-ctrl <- trainControl(method="repeatedcv",repeats = 3)
-popular_train <- popular_train[sample(.N, 1000)]
-popular_test <- popular_test[sample(.N, 1000)]
-knnFit <- train(is_popular ~ ., data = popular_train, method = "knn",
+ctrl <- trainControl(method="repeatedcv", number = 5, repeats = 3)
+knnFit <- train(is_popular ~ ., data = small_popular_train_50, method = "knn",
                 trControl = ctrl, preProcess = c("center","scale"), tuneLength = 20)
 
 plot(knnFit)
 
-knnPredict <- predict(knnFit,newdata = popular_test)
-#Get the confusion matrix to see accuracy value and other parameter values
-confusionMatrix(knnPredict, popular_test$is_popular)
+knnFit
+
+knnPredict <- predict(knnFit,newdata = small_popular_test_50)
+confusionMatrix(knnPredict, small_popular_test_50$is_popular)
 
 
-#knn with kw_avg_avg
-ctrl <- trainControl(method="repeatedcv",repeats = 3)
-popular_train <- popular_train[sample(.N, 1000), c("kw_avg_avg", "is_popular"), with = F]
-popular_test <- popular_test[sample(.N, 1000), c("kw_avg_avg", "is_popular"), with = F]
-knnFit <- train(is_popular ~ ., data = popular_train, method = "knn",
+
+pos_probs <- predict(knnFit, newdata = small_popular_test_50, "prob")$popular
+predictions <- prediction(predict(knnFit, small_popular_test_50, "prob")$popular, small_popular_test_50$is_popular)
+perf <- performance(predictions, measure = "tpr", x.measure = "fpr")
+
+roc_df <- data.frame(
+    FPR = perf@x.values[[1]], 
+    TPR = perf@y.values[[1]], 
+    cutoff = perf@alpha.values[[1]]
+)
+
+ggplot(roc_df) + 
+    geom_line(aes(FPR, TPR), size = 2, col = "darkred") +
+    geom_ribbon(aes(FPR, ymin = 0, ymax = TPR), fill = "darkred", alpha = 0.3) +
+    geom_segment(
+        aes(x = 0, y = 0, xend = 1, yend = 1), 
+        linetype = "dotted", col = "black"
+    ) +
+    scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, .1)) +
+    scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, .1)) + 
+    xlab("False Positive Rate") + ylab("True Positive Rate")
+
+
+
+
+
+popular_10 <- get_popular_data(news, percent_of_not_popular = 0.9)
+popular_train_10 <- train_news(popular_10)
+popular_test_10 <- test_news(popular_10)
+small_popular_train_10 <- small_data(popular_train_10)
+small_popular_test_10 <- small_data(popular_test_10)
+
+ctrl <- trainControl(method="repeatedcv", number = 5, repeats = 3)
+knnFit <- train(is_popular ~ ., data = small_popular_train_10, method = "knn",
                 trControl = ctrl, preProcess = c("center","scale"), tuneLength = 20)
 
 plot(knnFit)
 
-knnPredict <- predict(knnFit,newdata = popular_test)
-#Get the confusion matrix to see accuracy value and other parameter values
-confusionMatrix(knnPredict, popular_test$is_popular)
+knnFit
+
+knnPredict <- predict(knnFit,newdata = small_popular_test_10)
+confusionMatrix(knnPredict, small_popular_test_10$is_popular)
 
 
-# SVM ---------------------------------------------------------------------
 
-train <- train[sample(.N, 1000)]
-test <- test[sample(.N, 1000)]
-ctrl <- trainControl(method = "repeatedcv", repeats = 10)
-set.seed(1500)
-mod <- train(shares~., data=train, method = "svmLinear", trControl = ctrl)
-svmPredict <- predict(mod, newdata = test)
+pos_probs <- predict(knnFit, newdata = small_popular_test_10, "prob")$popular
+predictions <- prediction(predict(knnFit, small_popular_test_10, "prob")$popular, small_popular_test_10$is_popular)
+perf <- performance(predictions, measure = "tpr", x.measure = "fpr")
 
-ctrl <- trainControl(method = "repeatedcv", repeats = 10)
-set.seed(1500)
-mod <- train(shares~., data=train, method = "svmRadial", trControl = ctrl, preProc = c("center", "scale"))
+roc_df <- data.frame(
+    FPR = perf@x.values[[1]], 
+    TPR = perf@y.values[[1]], 
+    cutoff = perf@alpha.values[[1]]
+)
 
-svmPredict <- predict(mod, newdata = test)
-
-ctrl <- trainControl(method = "repeatedcv", repeats = 2)
-set.seed(1500)
-mod <- train(shares~., data=train, method = "svmPoly", trControl = ctrl, preProc = c("center", "scale"))
-
-svmPredict <- predict(mod, newdata = test)
-
-# random forest -----------------------------------------------------------
-
-rf_model<-train(is_popular~.,data=popular_train, method="rf",
-                trControl=trainControl(method="cv",number=5),
-                preProc = c("center", "scale"), prox = TRUE)
-
-rfPred <- predict(rf_model, newdata = popular_test)
+ggplot(roc_df) + 
+    geom_line(aes(FPR, TPR), size = 2, col = "darkred") +
+    geom_ribbon(aes(FPR, ymin = 0, ymax = TPR), fill = "darkred", alpha = 0.3) +
+    geom_segment(
+        aes(x = 0, y = 0, xend = 1, yend = 1), 
+        linetype = "dotted", col = "black"
+    ) +
+    scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, .1)) +
+    scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, .1)) + 
+    xlab("False Positive Rate") + ylab("True Positive Rate")
 
 # naive bayes -------------------------------------------------------------
 
@@ -86,3 +112,11 @@ nnModel <- train(shares~., data = test, method = "neuralnet",
                  trControl = trainControl(method = "repeatedcv", repeats = 2), linout = TRUE)
 
 nnModel <- neuralnet(shares ~ kw_avg_avg + timedelta, train, hidden=5, threshold=0.1)
+
+
+# adaboost ----------------------------------------------------------------
+
+
+# logit -------------------------------------------------------------------
+
+

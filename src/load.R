@@ -55,6 +55,7 @@ get_popular_data <- function(news, percent_of_not_popular = 0.5) {
     limit_of_popularity <- quantile(news$shares, percent_of_not_popular)
     popular <- copy(news)
     popular$is_popular <- (popular$shares > limit_of_popularity)
+    popular <- popular[,"is_popular":=ifelse(is_popular, "popular", "not_popular")]
     popular$is_popular <- as.factor(popular$is_popular)
     popular$shares <- NULL
     popular
