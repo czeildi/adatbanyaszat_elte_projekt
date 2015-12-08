@@ -5,7 +5,8 @@ replace_weekday_columns <- function(news_data) {
     news_data
 }
 
-replace_channel_columns <- function(news_data) {
+replace_channel_columns <- function(news) {
+    news_data <- copy(news)
     news_data <- news_data[,"no_channel":= apply(news_data[,data_channel_columns, with = F],1,
                                                   function(x) {1 - sum(x)})]
     channel_columns <- c(data_channel_columns, "no_channel")
