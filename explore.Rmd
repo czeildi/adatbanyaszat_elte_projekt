@@ -1,6 +1,6 @@
 ---
 title: "Explore the Online News Popularity Dataset"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
