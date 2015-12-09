@@ -21,3 +21,6 @@ src/temp.R
 explore.pdf
 baseline_prediction_models.pdf
 baseline_prediction_models.html
+ROC.png
+lin.png
+acc.png
