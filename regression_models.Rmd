@@ -1,0 +1,81 @@
+---
+title: "regression models"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load, include = FALSE}
+source('src/load.R')
+
+library(caret)
+library(class)
+library(rpart)
+library(e1071)
+```
+
+## Support Vector Machine
+
+```{r, include = FALSE}
+train <- train_news(news)
+train <- train[,"shares":= log(shares)]
+small_train <- small_data(train)
+test <- test_news(news)
+test <- test[,"shares":= log(shares)]
+small_test <- small_data(test)
+```
+
+```{r, warning = FALSE}
+ctrl <- trainControl(method = "repeatedcv", repeats = 3)
+linsvmFit <- train(shares~., data=small_train, method = "svmLinear",
+                   trControl = ctrl, preProc = c("center", "scale"))
+linsvmFit
+
+small_test$linsvm <- predict(linsvmFit, newdata = small_test)
+sqrt(mean((small_test$linsvm - small_test$shares)*(small_test$linsvm - small_test$shares)))
+```
+
+```{r, include = FALSE}
+train <- train_news(news)
+train <- train[,"shares":= log(shares)]
+small_train <- small_data(train)
+test <- test_news(news)
+test <- test[,"shares":= log(shares)]
+small_test <- small_data(test)
+```
+
+```{r, echo = FALSE}
+ctrl <- trainControl(method = "repeatedcv", repeats = 3)
+radialsvmFit <- train(shares~., data=small_train, method = "svmRadial",
+                   trControl = ctrl, preProc = c("center", "scale"))
+
+radialsvmFit
+
+small_test$radialsvm <- predict(radialsvmFit, newdata = small_test)
+sqrt(mean((small_test$radialsvm - small_test$shares)*(small_test$radialsvm - small_test$shares)))
+```
+
+## random forest
+
+```{r, include=FALSE}
+train <- train_news(news)
+train <- train[,"shares":= log(shares)]
+small_train <- small_data(train)
+test <- test_news(news)
+test <- test[,"shares":= log(shares)]
+small_test <- small_data(test)
+```
+
+```{r, echo  = FALSE}
+ctrl <- trainControl(method = "repeatedcv", repeats = 3)
+rfFit <- train(shares ~ .,data = small_train, method = "rf",
+                trControl=ctrl,
+                preProc = c("center", "scale"), prox = TRUE)
+
+rfFit
+
+small_test$rf <- predict(rfFit, newdata = small_test)
+sqrt(mean((small_test$rf - small_test$shares)*(small_test$rf - small_test$shares)))
+```
