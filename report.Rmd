@@ -13,3 +13,17 @@ knitr::opts_chunk$set(echo = TRUE)
 - This [github](https://github.com/czeildi/adatbanyaszat_elte_projekt) repository contains all code for our work regarding this project. It helped us collaborating as well as keep track of changes and make our work easy to look at. We worked in **R** using **RStudio**.
 - This project is about trying basic data mining methods on the [Online News Popularity dataset](http://archive.ics.uci.edu/ml/datasets/Online+News+Popularity) while trying to predict the number of shares of an article. This is a publicly available dataset at  [UCI Machine Learning Repository](http://archive.ics.uci.edu/ml/index.html).
 - authors: Lilla Kohut (kohutlilla@gmail.com) and Ildi Czeller (czeildi@gmail.com)
+
+##A választott adathalmaz jellemzése.
+
+##Milyen problémát kívánsz megoldani? A probléma adatbányászati feladatként való megfogalmazása.
+
+##Hipotézisek megfogalmazása. Mik az előzetes tippek, elvárások a probléma megoldásáról?
+
+##Milyen adat előfeldolgozási lépések szükségesek? (pl.: diszkretizálás, oszlop elhagyása, adathalmaz formátumának átalakítása, hiányzó adatok kezelése, duplikált adatok esetleges szűrése stb.)
+
+##A kipróbált és végül alkalmazott modellek, ill. algoritmusok, valamint ezek paraméterezésének dokumentálása, modell(ek) jóságának kimérése.
+
+##A kapott eredmények könnyen értelmezhető, magyarázatot minél kevésbé igénylő vizualizálása.
+
+##Az adathalmaz elemzése során levont következtetések leírása, prezentálása, elmagyarázása. A kapott eredmények mennyiben térnek el az esetlegesen elvárt eredménytől?

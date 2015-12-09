@@ -51,9 +51,13 @@ test_news <- function(news, seed = 123456) {
 
 # news data with binary target variable -----------------------------------
 
-get_popular_data <- function(news, percent_of_not_popular = 0.5) {
+get_popular_data <- function(news, percent_of_not_popular = 0.5, replace = T) {
     limit_of_popularity <- quantile(news$shares, percent_of_not_popular)
     popular <- copy(news)
+    if (replace) {
+        popular <- replace_channel_columns(popular)
+        popular <- replace_weekday_columns(popular)
+    }
     popular$is_popular <- (popular$shares > limit_of_popularity)
     popular <- popular[,"is_popular":=ifelse(is_popular, "popular", "not_popular")]
     popular$is_popular <- as.factor(popular$is_popular)
