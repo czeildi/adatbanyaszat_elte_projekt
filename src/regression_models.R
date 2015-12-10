@@ -59,14 +59,12 @@ sqrt(mean((small_test$radialsvm - small_test$shares)*(small_test$radialsvm - sma
 
 train <- train_news(news)
 train <- train[,"shares":= log(shares)]
-small_train <- small_data(train)
+small_train <- small_data(train, size = 200)
 test <- test_news(news)
 test <- test[,"shares":= log(shares)]
-small_test <- small_data(test)
+small_test <- small_data(test, size = 200)
 
-ctrl <- trainControl(method = "repeatedcv", repeats = 3)
 rfFit <- train(shares ~ .,data = small_train, method = "rf",
-                trControl=ctrl,
                 preProc = c("center", "scale"), prox = TRUE)
 
 rfFit

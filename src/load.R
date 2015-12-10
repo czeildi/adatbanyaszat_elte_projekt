@@ -51,7 +51,7 @@ test_news <- function(news, seed = 123456) {
 
 # news data with binary target variable -----------------------------------
 
-get_popular_data <- function(news, percent_of_not_popular = 0.5, replace = T) {
+get_popular_data <- function(news, percent_of_not_popular = 0.5, replace = F) {
     limit_of_popularity <- quantile(news$shares, percent_of_not_popular)
     popular <- copy(news)
     if (replace) {

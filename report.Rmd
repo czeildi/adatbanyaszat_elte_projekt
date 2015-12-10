@@ -1,29 +1,190 @@
 ---
 title: "Report of predicting number of shares in Online News Popularity Data"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+source("src/load.R")
+library(caret)
+library(class)
+library(rpart)
+library(e1071)
+library(ROCR)
+library(ada)
+
+train <- train_news(news)
+train <- train[,"shares":= log(shares)]
+small_train <- small_data(train)
+test <- test_news(news)
+test <- test[,"shares":= log(shares)]
+small_test <- small_data(test)
 ```
 
-# Report of predicting number of shares in Online News Popularity Data
+## Háttér
+- Ez a  [github](https://github.com/czeildi/adatbanyaszat_elte_projekt) repository tartalmazza az összes általunk írt kódot ehhez a projekthez. **R** nyelven, **RStudio** fejlesztőkörnyezettel dolgoztunk, nagyrészt a **caret** adatbányászati könyvtár metódusait használtuk.
+- Ebben a projektben alap adatbányászati algoritmusokat próbálunk ki az [Online News Popularity adathalmazon](http://archive.ics.uci.edu/ml/datasets/Online+News+Popularity), egy cikk megosztásainak számát szeretnénk prediktálni. Ez egy publikusan elérhető adathalmaz itt: [UCI Machine Learning Repository](http://archive.ics.uci.edu/ml/index.html).
+- szerzők: Kohut Lilla (kohutlilla@gmail.com) és Czeller Ildikó(czeildi@gmail.com)
+- Jegyzőkönyvek megtekinthetőek itt: [GDrive](https://drive.google.com/folderview?id=0B6pui24xUmwPRmI0SkZqMndlMjg&usp=sharing)
 
-## Background
-- This [github](https://github.com/czeildi/adatbanyaszat_elte_projekt) repository contains all code for our work regarding this project. It helped us collaborating as well as keep track of changes and make our work easy to look at. We worked in **R** using **RStudio**.
-- This project is about trying basic data mining methods on the [Online News Popularity dataset](http://archive.ics.uci.edu/ml/datasets/Online+News+Popularity) while trying to predict the number of shares of an article. This is a publicly available dataset at  [UCI Machine Learning Repository](http://archive.ics.uci.edu/ml/index.html).
-- authors: Lilla Kohut (kohutlilla@gmail.com) and Ildi Czeller (czeildi@gmail.com)
+## A választott adathalmaz jellemzése
 
-##A választott adathalmaz jellemzése.
+**Adat alap statisztikái**: **39797** adat pont, **61** változó, amiből **1** a célváltozó, **2** azonosító, és a maradék **58** prediktív, nincs hiányzó adat, se duplikátum. Az adat létrehozásának ideje **January 8, 2015**. A cikkek egyenletesen ölelnek fel egy 2 év hosszú időszakot. Bizonyos változók már adatbányászati algoritmusok felhasználásával jöttek létre, pl **LDA**.
 
-##Milyen problémát kívánsz megoldani? A probléma adatbányászati feladatként való megfogalmazása.
+- Kategorikus változók száma: 7 + 1 +  6 = **14** 
+- Numerikus változók száma: **44**
 
-##Hipotézisek megfogalmazása. Mik az előzetes tippek, elvárások a probléma megoldásáról?
+##A probléma adatbányászati feladatként való megfogalmazása.
 
-##Milyen adat előfeldolgozási lépések szükségesek? (pl.: diszkretizálás, oszlop elhagyása, adathalmaz formátumának átalakítása, hiányzó adatok kezelése, duplikált adatok esetleges szűrése stb.)
+A cél a *shares* változó prediktálása, azaz a közösségi oldalon való megosztások számának prediktálása. A *shares* változó eloszlása vastag farkú, nagy szórású, lognormális, de inkább hatványeloszlás jellegű, ezért a *log(shares)* változót prediktáljuk. Emellett a feladat megfogalmazható klasszifikálási feladatként is. A mediánt, illetve a 90%-os quantilist választva az adatokat két osztályra bontottuk, ,,népszerű" és nem népszerű cikkekre.
+
+```{r shares}
+ggplot(news, aes(x = log(shares))) + geom_density() +
+    labs(title = "Log(shares) változó eloszlásának tapasztalati su`ru`ségfüggvénye")
+```
+
+##Hipotézisek megfogalmazása. 
+
+A felfedezési fázisban tett megfigyeléseink:
+
+- Egyik változónak sincs szignifikáns lineáris összefüggése a célváltozóval.
+- A hét napjai szerint csoportosítva nincs jelentős különbség a célváltozó átlagos, illetve medián értékében.
+- Téma szerint csoportosítva már szignifikáns különbség figyelhető meg a célváltozó tipikus értékében, ez megalapozza, hogy a változók együtt már prediktálni tudják (a véletlennél szignifikánsan jobban) a célváltozót.
+
+```{r shares_by_channel, include = FALSE}
+channel_data <- news[,c(data_channel_columns, "shares"),with = F]
+channel_data <- channel_data[,c("lifestyle", "entertainment", "bus", "socmed", "tech", "world") :=
+                                 list(lifestyle * shares, entertainment * shares,
+                                      bus * shares, socmed * shares, tech * shares, world * shares)]
+channel_data <- melt(channel_data[,data_channel_columns, with = F],
+                     measure.vars = data_channel_columns)
+channel_data <- channel_data[value != 0]
+channel_data <- channel_data[,c("mean_shares", "median_shares"):=
+                                 list(mean(value), median(value)), by = variable]
+channel_data <- unique(channel_data[,.(variable, mean_shares, median_shares)])
+channel_data <- melt(channel_data,measure.vars = c("mean_shares", "median_shares"),
+                     id.vars = "variable" )
+```
+
+```{r, echo = FALSE}
+ggplot(channel_data, aes(x = variable)) + 
+    geom_bar(aes(y = value, fill = `variable.1`), stat = "identity", position = "dodge") +
+    xlab("channel") + ylab("shares")
+```
+
+##Alkalmazott előfeldolgozási lépések
+
+- Adat gyűjtésre és tisztításra nem volt szükség, az adat táblázatos formában, hiányzó vagy duplikált adat nélkül állt rendelkezésünkre.
+- Dimenziócsökkentést és diszkretizálást a modellek egy részénél alkalmaztunk: a hét napjai alapból 7 numerikus oszlopban voltak eltárolva, ezt ésszerűnek tartottuk összevonni egyetlen kategorikus oszlopba például a **KNN** algoritmus futtatása előtt. Hasonlóan jártunk el a *data channel* változóval. A modellek futtatásához nem volt túl sok változó, és más-más információt hordoznak, ezért nem éreztük például egy főkomponens-analízises dimenziócsökkentés alkalmazását indokoltnak.
+- A relatíve sok adatpont miatt a futásidők csökkentése érdekében minden modellünket más-más teljesen véletlen választott 1000 elemű train és teszt adaton futtattuk le. A 40000 elemű adatból kb 10 modellhez 1000-1000 sort választva elkerültük azt is, hogy a modellekk közötti túltanulás álljon fenn.
 
 ##A kipróbált és végül alkalmazott modellek, ill. algoritmusok, valamint ezek paraméterezésének dokumentálása, modell(ek) jóságának kimérése.
 
-##A kapott eredmények könnyen értelmezhető, magyarázatot minél kevésbé igénylő vizualizálása.
+A regressziós modellek esetén **RMSE**-t használtunk a modellek jóságának mérésére, míg a klasszifikálási feladat esetén a szintén standard _accuracy_t, azaz találati arányt. Itt figyeltünk a *true positive rate*, illetve *false positive rate* viszonyára is.
 
-##Az adathalmaz elemzése során levont következtetések leírása, prezentálása, elmagyarázása. A kapott eredmények mennyiben térnek el az esetlegesen elvárt eredménytől?
+Minden modellünk (kivéve lineáris regresszió) esetén ismételt kereszt validációval (**Cross-validation**) biztosítottuk, hogy a modell ne tanuljon túl a train adaton. Paramétereket a train adaton futtatás alapján választottunk, majd az így véglegesített modellt futtattuk le a teszt adaton, és ott mértük le a teljesítményét.
+
+Lineráis regressziót, illetve véletlen osztályzást vettünk alap, egyfajta benchmark modellnek, amihez első körben minden modellünk teljesítményét viszonyítottuk.
+
+Részletes kódok és mérési eremények a megfelelő helyen megtekinthetőek: ld. háttér.
+
+###Lineáris és multilineáris regresszió
+A lineáris regresszióhoz a célváltozóval legjobban korreláló *kw_avg_avg* változót használtuk, míg a multilineáris regresszióhoz az összes változót.
+
+```{r}
+lm1 <- lm(shares ~ kw_avg_avg, data = train)
+train$lin1 <- lm1$fitted.values
+train$lin1_res <- lm1$residuals
+ggplot(train, aes(x = kw_avg_avg, y = shares)) + geom_point() +
+    geom_smooth(method = "lm", formula = y ~ x)
+
+sqrt(mean(train$lin1_res * train$lin1_res))
+
+test$lin1 <- predict.lm(lm1, newdata = test)
+sqrt(mean((test$lin1 - test$shares)*(test$lin1 - test$shares)))
+```
+
+###Random forest
+
+A regressziós modellek közül ez teljesített a legjobban, a teszt adaton mért RMSE érték 80%-a a benchmark modell által adottnak, amihez viszonyítunk. Az **mtry** paramétert 2-nek választottuk, ez azt határozza meg, hogy egy csúcsban hány változó alapján lehet kettébontani az adatot.
+
+###Support Vector Machine
+- lineáris kernel
+- radiális kernel
+- polinomiális kernel: legfeljebb harmadfokú polinomokkal kísérleteztünk.
+
+###KNN
+
+A változók normalizálása után euklideszi távolságot használtunk. 5-50 különböző számú szomszéd figyelembevételével lefuttava kb 30 szomszédig nőtt egyértelműen a pontosság, utána tovább nem nőtt. *k=35* paraméterrel teszteltünk, 62%-os a pontosság.
+
+```{r, include = F}
+popular_50 <- get_popular_data(news)
+popular_train_50 <- train_news(popular_50)
+popular_test_50 <- test_news(popular_50)
+small_popular_train_50 <- small_data(popular_train_50)
+small_popular_test_50 <- small_data(popular_test_50)
+```
+```{r, echo = F}
+ctrl <- trainControl(method="repeatedcv", number = 5, repeats = 3)
+knnFit <- train(is_popular ~ ., data = small_popular_train_50, method = "knn",
+                trControl = ctrl, preProcess = c("center","scale"), tuneLength = 20)
+
+plot(knnFit)
+```
+
+###Naive Bayes
+
+Itt is normalizáltuk a változókat, a modell 58%-os eredményt produkált.
+
+```{r, include = F}
+popular_50 <- get_popular_data(news)
+popular_train_50 <- train_news(popular_50)
+popular_test_50 <- test_news(popular_50)
+small_popular_train_50 <- small_data(popular_train_50)
+small_popular_test_50 <- small_data(popular_test_50)
+
+set.seed(3456)
+nbFit <- train(is_popular ~ ., 
+              data=small_popular_train_50,
+              method = "nb",
+              trControl = trainControl(method="repeatedcv", number = 5),
+              tuneGrid = data.frame(fL=0, usekernel=FALSE))
+
+nbPredict <- predict(nbFit, small_popular_test_50, type="raw")
+confusionMatrix(nbPredict, small_popular_test_50$is_popular)
+
+
+
+pos_probs <- predict(nbFit, newdata = small_popular_test_50, "prob")$popular
+predictions <- prediction(predict(nbFit, small_popular_test_50, "prob")$popular, small_popular_test_50$is_popular)
+perf <- performance(predictions, measure = "tpr", x.measure = "fpr")
+
+roc_df <- data.frame(
+    FPR = perf@x.values[[1]], 
+    TPR = perf@y.values[[1]], 
+    cutoff = perf@alpha.values[[1]]
+)
+```
+
+####ROC görbe:
+
+```{r, echo = FALSE}
+ggplot(roc_df) + 
+    geom_line(aes(FPR, TPR), size = 2, col = "darkred") +
+    geom_ribbon(aes(FPR, ymin = 0, ymax = TPR), fill = "darkred", alpha = 0.3) +
+    geom_segment(
+        aes(x = 0, y = 0, xend = 1, yend = 1), 
+        linetype = "dotted", col = "black"
+    ) +
+    scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, .1)) +
+    scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, .1)) + 
+    xlab("False Positive Rate") + ylab("True Positive Rate")
+```
+
+###AdaBoost
+
+Haszználtuk a grid szisztémájú paraméter tesztelést, az eredmények alapján válaszotttuk a legjobb modellt, ami 57%osan teljesített.
+
+##Összefoglaló
+
+Összeségében a regressziós feladat a vártnál nehezebbnek bizonyult,  a random forest teljesített a legjobban. A klasszifikálási feladatban stabil eredménye volt modelljeinknek, legjobbnak a **KNN** algoritmus bizonyult.
